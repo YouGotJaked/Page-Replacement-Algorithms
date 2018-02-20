@@ -1,5 +1,0 @@
-/*
-maintain linked list of all pages
-maintain order in which pages entered memory
-replace page at front of list
-*/
