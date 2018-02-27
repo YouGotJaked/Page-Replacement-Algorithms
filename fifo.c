@@ -14,7 +14,7 @@ replace page at front of list
 
 int main (int argc, char **argv) {
 	// check arguments
-	check_argc(argc, 2, argv[0]);
+	check_argc(argc, 2, argv);
 
 	char buffer[SIZE];
 	int page_frames = atoi(argv[1]);
