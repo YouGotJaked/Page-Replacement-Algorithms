@@ -1,57 +1,62 @@
-/*
- at each clock interrupt, scan through table
-if R=1 for page, add 1 to counter
-on replacement, pick page with lowest counter
-*/
-
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <assert.h>
+#include <ctype.h>
 #include "deque.h"
-#include "helper.h"
 
-#define SIZE 100
+#define BUFFER_SIZE 1024
 
-int main(int argc, char **argv) {
-    // check arguments
-    check_argc(argc, 2, argv, 0);
-    
-    char buffer[SIZE];
-    int page_frames = atoi(argv[1]);
-    int count_memory = 0;
-    int count_fault = 0;
-    int cycles = 0;
-    
-    // use deque to create page table
-    DEQUE *page_table = createDeque();
-    
-    while(fgets(buffer, SIZE, stdin) != NULL) {
-        int curr_page;
-        // get first number on line
-        int page_val = sscanf(buffer, "%d", &curr_page);
-        // only access if number
-        if (page_val > 0) {
-            cycles++;
-            count_memory++;
-            // do ??? if page already in table
-            if (findNode(page_table, curr_page) != NULL) {
-                printf("Found node at %d\n", curr_page);
-                setTime(page_table, curr_page, cycles);
-            } // remove least used page if table is full
-            else if (numItems(page_table) == page_frames) {
-                removeLeastUsed(page_table);
-                addLast(page_table, curr_page);
-                setLastTime(page_table, cycles);
-                count_fault++;
-                fprintf(stderr, "PAGE FAULT: %d\n", curr_page);
-            } else {
-                addLast(page_table, curr_page);
-                setLastTime(page_table, cycles);
-            }
+int main (int argc, const char* argv[]) {
+        /*
+ *         * argc should be 2
+ *                 * arvg[1] is the size of the page table/ amount of memory avaiable/ the number of page frames
+ *                         */
+
+        if (argc != 2) {
+                fprintf(stderr, "Not enough input arguments\n");
+                return 1;
         }
-        printDeque(page_table);
-    }
-    printf("Memory accesses: %d\n", count_memory);
-    printf("Page faults: %d\n", count_fault);
-}
+
+        int page_frames = atoi(argv[1]);
+        char buffer[BUFFER_SIZE];
+
+	int clock_cycles = 0;		//used for "time" at which the page entered memory
+        int page_faults = 0;            //counter of page faults
+        int memory_accesses = 0;        //counter of memory accesses (lines in file)
+
+
+        //create DEQUE
+	DEQUE* page_table = createDeque();
+
+
+	//loop through the file and grab the numbers in there
+	while (fgets(buffer, BUFFER_SIZE, stdin) != NULL ) {
+                int access;
+		//find the first integer in the line and store in x
+		int n = sscanf(buffer, "%d", &access);
+		if (n > 0) {
+			clock_cycles++;
+			memory_accesses++;
+			if (findNode(page_table,access) != NULL) {
+				//add page update time.  The update time function will also update the used counter
+				setTime(page_table,access,clock_cycles);
+			}
+			else if(numItems(page_table) ==  page_frames) {
+				/*Find page to replace*/
+				removeLeastUsed(page_table);
+				addLast(page_table,access);
+				setLastTime(page_table,clock_cycles);
+				page_faults++;
+				printf("PAGE FAULT: %d\n", access);
+			}
+			else {
+				addLast(page_table,access);
+				setLastTime(page_table,clock_cycles);
+			}
+		}
+
+	}
+	printf("memory accesses: %d\n",memory_accesses);
+	printf("page faults: %d\n",page_faults);
+} 
+

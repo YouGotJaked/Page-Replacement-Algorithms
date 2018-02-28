@@ -13,7 +13,7 @@ const char *help_txt[] = {
     "<file name> <size> <lo> <hi>\n",
 };
 
-int check_argc(int argc, int n, char **argv, int idx) {
+int check_argc(int argc, int n, const char **argv, int idx) {
     if (argc != n) {
         fprintf(stderr, "Usage: %s %s", argv[0], help_txt[idx]);
         exit(-1);

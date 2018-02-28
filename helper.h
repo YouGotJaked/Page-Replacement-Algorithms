@@ -3,6 +3,6 @@
 
 #include "helper.c"
 
-int check_argc(int argc, int n, char **argv, int idx);
+int check_argc(int argc, int n, const char **argv, int idx);
 
 #endif /* HELPER_H */

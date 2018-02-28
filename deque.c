@@ -1,292 +1,266 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include "deque.h"
 
 typedef struct node {
-    struct node *next;
-    struct node *prev;
-    int data;
-    int time;
-    int used;
+  	struct node *prev;	
+	struct node *next;	
+	int data;		
+	int used;
+	int time;	
 } NODE;
 
 typedef struct deque {
-    int count;
-    struct node *dummy;
+	struct node *dummy;
+	int count;
 } DEQUE;
 
-/*
- * Big-O Notation: O(1)
- * Returns a pointer to a new deque
- */
+
 DEQUE *createDeque(void) {
-    DEQUE *dp;
+	DEQUE *dp = (DEQUE *)malloc(sizeof(DEQUE));
+	assert(dp != NULL);
+	dp->dummy = malloc(sizeof (NODE));
+	assert(dp->dummy != NULL);
+	/*Link the dummy node to itself */
+	dp->dummy->next = dp->dummy;
+	dp->dummy->prev = dp->dummy;
 
-    dp = malloc(sizeof (DEQUE));
-    assert(dp != NULL);
-
-    dp->count = 0;
-
-    dp->dummy = malloc(sizeof (struct node));
-    assert(dp->dummy != NULL);
-
-    dp->dummy->next = dp->dummy;
-    dp->dummy->prev = dp->dummy;
-
-    return dp;
+	/*Sentinel node contains no data, so it does not count towards count*/
+	dp->count = 0;
+	return dp;
 }
-
-/*
- * Big-O Notation: O(n)
- * Deallocates memory associated with the deque pointed to by dp
- */
-
 void destroyDeque(DEQUE *dp) {
-    assert(dp != NULL);
-
-    struct node *pDel;
-
-    for (int i = 0; i < dp->count; i++) {
-        pDel = dp->dummy->next;
-        dp->dummy->next = pDel->next;
-        free(pDel);
-    }
+	assert(dp != NULL);
+	NODE * head = dp->dummy->next;
+	NODE * temp;
+	/* 
+	 * If dp->dummy->next == NULL, then dp->dummy is the only thing to free and the while loop wont run
+	 * Want the while loop to go through the list and delete all nodes until it circles back and hits the dummy, as that marks the end of the circle
+	 * Free the dummy outside of the loop and then free the deque
+	*/
+	while (head != NULL && head != dp->dummy) {
+		temp = head;
+		head = head->next;
+		free(temp);
+	}//end while
+	free(dp->dummy);
+	free(dp);
+	return;
 }
 
-/*
- * Big-O Notation: O(1)
- * Returns the number of items in the deque pointed to by dp
- */
-int numItems(DEQUE *dp) {
-    assert(dp != NULL);
-
-    return dp->count;
+int numItems(DEQUE * dp) {
+	return dp->count;
 }
 
-/*
- * Big-O Notation: O(1)
- * Adds x as the first item in the deque pointed to by dp
- */
-void addFirst(DEQUE *dp, int x) {
-    assert(dp != NULL);
-
-    struct node *pAdd;
-    pAdd = malloc(sizeof (struct node));
-    assert(pAdd != NULL);
-
-    pAdd->data = x;
-    
-    pAdd->used = 0;
-    pAdd->time = 0;
-
-    pAdd->prev = dp->dummy;
-    pAdd->next = dp->dummy->next;
-
-    dp->dummy->next->prev = pAdd;
-    dp->dummy->next = pAdd;
-
-    dp->count++;
+void addFirst (DEQUE *dp, int x) {
+	assert(dp != NULL);
+	/*Allocate memory for a new node and then assert that it was allocated correctly*/
+	NODE * np = malloc(sizeof(NODE));
+	assert(np != NULL);
+	np->data = x;
+	np->used = 0;
+	np->time = 0;
+	/* Insert the new node into the circular doubly linked list directly after the dummy(dummy->next = np).*/
+	dp->dummy->next->prev = np;
+	np->next = dp->dummy->next;
+	np->prev = dp->dummy;
+	dp->dummy->next = np;
+	dp->count++;
 }
 
-/*
- * Big-O Notation: O(1)
- * Adds x as the last item in the deque pointed to by dp
- */
 void addLast(DEQUE *dp, int x) {
-    assert(dp != NULL);
-
-    struct node *pAdd;
-    pAdd = malloc(sizeof (struct node));
-    assert(pAdd != NULL);
-
-    pAdd->data = x;
-    
-    pAdd->used = 0;
-    pAdd->time = 0;
-
-    pAdd->next = dp->dummy;
-    pAdd->prev = dp->dummy->prev;
-    
-    dp->dummy->prev->next = pAdd;
-    dp->dummy->prev = pAdd;
-
-    dp->count++;
+	assert(dp != NULL);
+	NODE * np = malloc(sizeof(NODE));
+	assert(np != NULL);
+	np->data = x;
+	np->used = 0;
+	np->time = 0;
+	/*Insert the new node after the dummy (dummy->prev = np)*/
+	dp->dummy->prev->next = np;
+	np->prev = dp->dummy->prev;
+	np->next = dp->dummy;
+	dp->dummy->prev = np;
+	dp->count++;
 }
 
-/*
- * Big-O Notation: O(1)
- * Removes and returns the first item in the deque pointed to by dp; the deque must not be empty
- */
 int removeFirst(DEQUE *dp) {
-    assert(dp != NULL);
-
-    int data;
-
-    struct node *pDel = dp->dummy->next;
-    struct node *tempNext = pDel->next;
-
-    data = pDel->data;
-
-    dp->dummy->next = tempNext;
-    
-    tempNext->prev = dp->dummy;
-    tempNext->next = pDel->next->next;
-
-    free(pDel);
-
-    dp->count--;
-
-    return data;
+	assert(dp != NULL);
+	/*If the dummy is the only node in the deque, then there is nothing to remove and return*/
+	if (dp->count == 0)
+		return -1;
+	/*Return the data (int) from the node after dummy (dummy->next) and reassign pointers*/
+	int data = dp->dummy->next->data;
+	NODE *np = dp->dummy->next; //temporary copy
+	dp->dummy->next = np->next;
+	np->next->prev = dp->dummy;
+	free(np);
+	dp->count--;
+	return data;
 }
 
-/*
- * Big-O Notation: O(1)
- * Removes and returns the last item in the deque pointed to by dp; the deque must not be empty
- */
 int removeLast(DEQUE *dp) {
-    assert(dp != NULL);
-
-    int data;
-
-    struct node *pDel = dp->dummy->prev;
-    struct node *tempLast = pDel->prev;
-
-    data = pDel->data;
-
-    dp->dummy->prev = pDel->prev;
-    
-    tempLast->next = dp->dummy;
-    dp->dummy->prev = tempLast;
-
-    free(pDel);
-
-    dp->count--;
-    
-    return data;
+	assert(dp != NULL);
+	/*If the dummy is the only node in the deque, then there is nothing to remove and return*/
+	if (dp->dummy->next == NULL)
+		return - 1;
+	/*Return the data (int) from the node before dummy (dummy->prev) and reassign pointers*/
+	int data = dp->dummy->prev->data;
+	NODE *np = dp->dummy->prev; //temporary copy
+	dp->dummy->prev = np->prev;
+	np->prev->next = dp->dummy;
+	free(np);
+	dp->count--;
+	return data;
 }
 
-/*
- * Big-O Notation: O(1)
- * Returns, but does not remove, the first item in the deque pointed to by dp; the deque must not be empty
- */
-int getFirst(DEQUE *dp) {
-    assert(dp != NULL && dp->count != 0);
-
-    return dp->dummy->next->data;
+int getFirst (DEQUE *dp) {
+	assert(dp != NULL);
+	if (dp->dummy->next == NULL)
+		return -1;
+	return dp->dummy->next->data;
 }
 
-/*
- * Big-O Notation: O(1)
- * Returns, but does not remove, the last item in the deque pointed to by dp; the deque must not be empty
- */
-int getLast(DEQUE *dp) {
-    assert(dp != NULL && dp->count != 0);
-
-    return dp->dummy->prev->data;
+ int getLast (DEQUE *dp) {
+	assert(dp != NULL);
+	if (dp->dummy->next == NULL)
+		return -1;
+	return dp->dummy->prev->data;
+ }
+ 
+NODE* findNode(DEQUE *dp, int x) { 
+	int found = 0;
+	NODE* np = dp->dummy->next;
+	while (np != dp->dummy) {
+		if (np->data == x) {
+			//if the page is already in the list, do nothing
+			found = 1;
+			break;
+		}
+		np = np->next;
+	}
+	if (found == 1)
+		return np;
+	else
+		return NULL;
 }
 
-/*
- * Big-O Notation: O(n)
- * Returns and finds a node in the deque with value x
- */
-NODE *findNode(DEQUE *dp, int x) {
-    int found = 0;
-    NODE *np = dp->dummy->next;
-    
-    while (np != dp->dummy) {
-        if (np->data == x) {
-            found = 1;
-            break;
-        }
-        np = np->next;
-    }
-    
-    if (found != 1)
-        return NULL;
-    return np;
-}
-
-/*
- * Big-O Notation: O(1)
- * Set time of node with value x in deque with value time
- */
 void setTime(DEQUE *dp, int x, int time) {
-    NODE *np = findNode(dp, x);
-    np->time = time;
-    np->used++;
+	NODE* np = findNode(dp, x);
+	np->time = time;
+	np->used++;
 }
 
-/*
- * Big-O Notation: O(1)
- * Set time of last node in deque with value time
- */
 void setLastTime(DEQUE *dp, int time) {
-    assert(dp != NULL);
-    
-    dp->dummy->prev->time = time;
-    dp->dummy->prev->used++;
+	assert(dp != NULL);	
+	dp->dummy->prev->time = time;
+	dp->dummy->prev->used++;
 }
 
-/*
- * Big-O Notation: O(n)
- * Remove node in deque with lowest time
- */
-void removeOldestTime(DEQUE *dp) {
-    assert(dp != NULL && dp->count != 0);
-    
-    NODE *np = dp->dummy->next;
-    NODE *least = np;
-    
-    while (np != dp->dummy) {
-        if (np->time < least->time) {
-            least = np;
+void moveToFront(DEQUE *dp, int x) {
+	assert(dp != NULL);
+			
+	/*If the dummy is the only node in the deque, then there is nothing to remove and return*/
+	if (dp->dummy->next == NULL)
+		return;
+
+	//find the node
+	NODE* n = findNode(dp,x);
+	if (n == NULL)
+		return;
+
+	//break the list chain around n
+	n->prev->next = n->next;
+	n->next->prev = n->prev;
+	
+	//insert n in the front of the list
+	n->prev = dp->dummy;
+	n->next = dp->dummy->next;
+	dp->dummy->next->prev = n;
+	dp->dummy->next = n;
+	return;	
+}
+
+void removeOldestTime(DEQUE* dp) {
+        assert(dp != NULL);
+
+        if (dp->dummy->next == NULL)
+                return;
+
+        NODE* np = dp->dummy->next;
+        NODE* least = np;
+	//search for lowest time
+        while (np != dp->dummy) {
+                if (np->time < least->time) {
+                        least = np;
+                }
+		np = np->next;
         }
-        np = np->next;
-    }
-    
-    least->prev->next = least->next;
-    least->next->prev = least->prev;
-    free(least);
-    dp->count--;
+	//remove lowest time
+        least->prev->next = least->next;
+        least->next->prev = least->prev;
+        free(least);
+        dp->count--;
 }
 
-/*
- * Big-O Notation: O(n)
- * Remove node in deque with lowest used value
- */
 void removeLeastUsed(DEQUE *dp) {
-    assert(dp != NULL && dp->count != 0);
-    
-    NODE *np = dp->dummy->next;
-    NODE *least = np;
-    
-    while (np != dp->dummy) {
-        if (np->used < least->used) {
-            least = np;
-        } //break tie with older page
-        else if (np ->used == least->used && np->time < least ->time) {
-            least = np;
-        }
-        np = np->next;
-    }
-    
-    least->prev->next = least->next;
-    least->next->prev = least->prev;
-    free(least);
-    dp->count--;
+
+	assert(dp!=NULL);
+	if (numItems(dp) == 0)
+		return;
+
+	
+	NODE* np = dp->dummy->next;
+	NODE* least = np;
+	
+	//search for node with the lowest "used" counter.
+	//if there is a tie, remove the one used furthest in the past
+	while (np != dp->dummy) {
+		if (np->used < least->used) {
+			least = np;
+		}
+		else if (np->used == least->used) {
+			if (np->time < least->time) {
+				least = np;
+			}
+		}
+		np = np->next;
+	}
+	//remove lowest time
+        least->prev->next = least->next;
+        least->next->prev = least->prev;
+        free(least);
+        dp->count--;
+
 }
 
-/*
- * Big-O Notation: O(n)
- * Print each node in deque
- */
+void removeRandom(DEQUE *dp) {
+	assert(dp != NULL);
+	
+	srand(time(NULL));
+	
+	int i;
+	NODE *np = dp->dummy->next;
+	NODE *rand_page = np;
+	
+	for (i = 2; i < dp->count; i++) {
+		if (rand() % i == 0) {
+		  printf("res: %d mod %d\n", rand(), i);
+			rand_page = np;
+		}
+		np = np->next;
+	}
+	moveToFront(dp, rand_page->data);
+	removeFirst(dp);
+}
+
 void printDeque(DEQUE *dp) {
-    NODE* np = dp->dummy->next;
-    
-    while (np != dp->dummy) {
-        printf("data:%d; time: %d; used: %d\n",np->data, np->time, np->used);
-        np = np->next;
-    }
-    printf("------------------------------\n");
+	NODE* np = dp->dummy->next;
+
+	while (np != dp->dummy) {
+		printf("data:%d; used: %d; time: %d\n",np->data, np->used, np->time);
+		np = np->next;
+	}
+	printf("------------------------------\n");
 }
