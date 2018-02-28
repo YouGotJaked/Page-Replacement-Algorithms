@@ -1,28 +1,20 @@
-/* 
- * File:  radix.c
- * Author: Jake Day
- * Class: COEN 12
- * Instructor: Atkinson
- * Section: T 5:15-8pm
- * Created on May 3, 2016, 5:29 PM
- * Description: This program implements a deque abstract data type using a circular, doubly-linked list with a sentinel or dummy node
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "deque.h"
 
-struct node {
+typedef struct node {
     struct node *next;
     struct node *prev;
     int data;
-};
+    int time;
+    int used;
+} NODE;
 
-struct deque {
+typedef struct deque {
     int count;
     struct node *dummy;
-};
+} DEQUE;
 
 /*
  * Big-O Notation: O(1)
@@ -84,6 +76,9 @@ void addFirst(DEQUE *dp, int x) {
     assert(pAdd != NULL);
 
     pAdd->data = x;
+    
+    pAdd->used = 0;
+    pAdd->time = 0;
 
     pAdd->prev = dp->dummy;
     pAdd->next = dp->dummy->next;
@@ -106,6 +101,9 @@ void addLast(DEQUE *dp, int x) {
     assert(pAdd != NULL);
 
     pAdd->data = x;
+    
+    pAdd->used = 0;
+    pAdd->time = 0;
 
     pAdd->next = dp->dummy;
     pAdd->prev = dp->dummy->prev;
@@ -186,4 +184,109 @@ int getLast(DEQUE *dp) {
     assert(dp != NULL && dp->count != 0);
 
     return dp->dummy->prev->data;
+}
+
+/*
+ * Big-O Notation: O(n)
+ * Returns and finds a node in the deque with value x
+ */
+NODE *findNode(DEQUE *dp, int x) {
+    int found = 0;
+    NODE *np = dp->dummy->next;
+    
+    while (np != dp->dummy) {
+        if (np->data == x) {
+            found = 1;
+            break;
+        }
+        np = np->next;
+    }
+    
+    if (found != 1)
+        return NULL;
+    return np;
+}
+
+/*
+ * Big-O Notation: O(1)
+ * Set time of node with value x in deque with value time
+ */
+void setTime(DEQUE *dp, int x, int time) {
+    NODE *np = findNode(dp, x);
+    np->time = time;
+    np->used++;
+}
+
+/*
+ * Big-O Notation: O(1)
+ * Set time of last node in deque with value time
+ */
+void setLastTime(DEQUE *dp, int time) {
+    assert(dp != NULL);
+    
+    dp->dummy->prev->time = time;
+    dp->dummy->prev->used++;
+}
+
+/*
+ * Big-O Notation: O(n)
+ * Remove node in deque with lowest time
+ */
+void removeOldestTime(DEQUE *dp) {
+    assert(dp != NULL && dp->count != 0);
+    
+    NODE *np = dp->dummy->next;
+    NODE *least = np;
+    
+    while (np != dp->dummy) {
+        if (np->time < least->time) {
+            least = np;
+        }
+        np = np->next;
+    }
+    
+    least->prev->next = least->next;
+    least->next->prev = least->prev;
+    free(least);
+    dp->count--;
+}
+
+/*
+ * Big-O Notation: O(n)
+ * Remove node in deque with lowest used value
+ */
+void removeLeastUsed(DEQUE *dp) {
+    assert(dp != NULL && dp->count != 0);
+    
+    NODE *np = dp->dummy->next;
+    NODE *least = np;
+    
+    while (np != dp->dummy) {
+        if (np->used < least->used) {
+            least = np;
+        } //break tie with older page
+        else if (np ->used == least->used && np->time < least ->time) {
+            least = np;
+        }
+        np = np->next;
+    }
+    
+    least->prev->next = least->next;
+    least->next->prev = least->prev;
+    free(least);
+    dp->count--;
+}
+
+/*
+ * Big-O Notation: O(n)
+ * Print each node in deque
+ */
+void printDeque(DEQUE *dp) {
+    NODE* np = dp->dummy->next;
+    
+    while (np != dp->dummy) {
+        printf("data:%d; time: %d; used: %d\n",np->data, np->time, np->used);
+        np = np->next;
+    }
+    printf("------------------------------\n");
 }
